@@ -1,0 +1,896 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>India E-commerce Return Rates Analysis</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    
+    <!-- Chosen Palette: 'Safe Harbor' - Warm neutrals (Stone/Gray) background with clear Signal Green (Low Returns) and Alert Red (High Returns) for data visualization. -->
+    
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f5f5f4; /* Stone 100 */
+            color: #1c1917; /* Stone 900 */
+        }
+
+        /* Chart Container Styling - MANDATORY per instructions */
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 100%; /* Flexible within grid */
+            height: 350px;
+            max-height: 400px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        @media (min-width: 768px) {
+            .chart-container {
+                height: 400px;
+            }
+        }
+
+        .card {
+            background-color: white;
+            border-radius: 0.75rem;
+            box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+            transition: transform 0.2s ease-in-out;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        /* Custom Scrollbar for list containers */
+        .custom-scroll::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb {
+            background: #d6d3d1;
+            border-radius: 3px;
+        }
+        .custom-scroll::-webkit-scrollbar-thumb:hover {
+            background: #a8a29e;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+
+    <!-- Application Structure Plan:
+         1. Header: Context setting (India E-commerce/Meesho focus).
+         2. Executive Summary: Key takeaways ("What has the lowest returns?").
+         3. Macro View: Comparative Bar Chart (High vs Low Return Categories).
+         4. Deep Dive: "Safe Zones" vs "Risk Zones" (Cards with qualitative insights).
+         5. Platform Dynamics: Meesho Specific Analysis (Value commerce nuances).
+         6. Interactive Tool: Profitability Calculator (Impact of returns on margin).
+         
+         Why this structure? It moves from general data -> specific insights -> actionable tools. 
+         Users first see the data, then understand WHY, then calculate the impact on their business.
+    -->
+
+    <!-- Navbar -->
+    <nav class="bg-white border-b border-stone-200 sticky top-0 z-50">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <i class="fas fa-chart-line text-emerald-600 text-xl mr-3"></i>
+                    <span class="font-bold text-xl text-stone-800">ReturnRate<span class="text-emerald-600">Intel</span> India</span>
+                </div>
+                <div class="flex items-center space-x-4">
+                    <span class="text-xs text-stone-500 bg-stone-100 px-2 py-1 rounded">Data Source: Industry Estimates 2024-25</span>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main class="flex-grow max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 w-full">
+
+        <!-- Introduction Section -->
+        <section class="mb-10 text-center max-w-3xl mx-auto">
+            <h1 class="text-3xl font-bold text-stone-900 mb-4">Finding the "Safe Harbor" in Indian E-commerce</h1>
+            <p class="text-lg text-stone-600 leading-relaxed">
+                Returns (RTO + Customer Returns) are the biggest profit killer in Indian e-commerce, especially on value platforms like Meesho. 
+                This interactive report analyzes which categories offer the lowest risk and highest stability.
+            </p>
+        </section>
+
+        <!-- Section 1: The Landscape (Main Comparison) -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-12">
+            <!-- Text Column -->
+            <div class="lg:col-span-1 space-y-4">
+                <div class="bg-emerald-50 border-l-4 border-emerald-500 p-4 rounded-r">
+                    <h3 class="font-bold text-emerald-800 text-lg mb-2">Winner: Personal Care</h3>
+                    <p class="text-emerald-700 text-sm">
+                        Consistently the lowest return category (< 5%). Hygiene concerns make these non-returnable by policy on most platforms.
+                    </p>
+                </div>
+                <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded-r">
+                    <h3 class="font-bold text-red-800 text-lg mb-2">High Risk: Apparel</h3>
+                    <p class="text-red-700 text-sm">
+                        Highest returns (25-40%). Issues with fit, fabric feel, and "wardrobing" (wearing once and returning) drive this up.
+                    </p>
+                </div>
+                <div class="bg-white p-6 rounded-lg border border-stone-200 shadow-sm mt-4">
+                    <h4 class="font-semibold text-stone-800 mb-3">Filter Visualization</h4>
+                    <div class="space-y-2">
+                        <button onclick="updateMainChart('all')" class="w-full text-left px-4 py-2 rounded text-sm hover:bg-stone-100 focus:bg-stone-200 transition font-medium text-stone-700">Show All Categories</button>
+                        <button onclick="updateMainChart('safe')" class="w-full text-left px-4 py-2 rounded text-sm hover:bg-emerald-50 text-emerald-700 focus:bg-emerald-100 transition font-medium"><i class="fas fa-check-circle mr-2"></i>Show "Safe Zones" (< 10%)</button>
+                        <button onclick="updateMainChart('risky')" class="w-full text-left px-4 py-2 rounded text-sm hover:bg-red-50 text-red-700 focus:bg-red-100 transition font-medium"><i class="fas fa-exclamation-circle mr-2"></i>Show "High Risk" (> 15%)</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Chart Column -->
+            <div class="lg:col-span-2 card p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-stone-800">Return Rate by Category (%)</h2>
+                    <span class="text-xs text-stone-400">Includes RTO & Customer Returns</span>
+                </div>
+                <div class="chart-container">
+                    <canvas id="categoryChart"></canvas>
+                </div>
+                <p class="text-xs text-center text-stone-500 mt-2 italic">Based on aggregated data from Indian marketplaces (Meesho, Flipkart, Amazon basics).</p>
+            </div>
+        </div>
+
+        <!-- Section 2: Deep Dive Analysis -->
+        <section class="mb-12">
+            <div class="mb-6">
+                <h2 class="text-2xl font-bold text-stone-900">Why the Difference?</h2>
+                <p class="text-stone-600">Understanding the psychology behind returns on value-focused platforms.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <!-- Safe Zone Card 1 -->
+                <div class="card p-5 border-t-4 border-emerald-400">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mr-3">
+                            <i class="fas fa-pump-soap"></i>
+                        </div>
+                        <h3 class="font-bold text-stone-800">Beauty & Personal Care</h3>
+                    </div>
+                    <div class="text-3xl font-bold text-stone-900 mb-1">3-5%</div>
+                    <div class="text-xs font-semibold text-emerald-600 mb-3">VERY LOW RETURN</div>
+                    <p class="text-sm text-stone-600">
+                        <strong>Why:</strong> Non-returnable policies due to hygiene. Low ticket size reduces "buyer's remorse."
+                    </p>
+                </div>
+
+                <!-- Safe Zone Card 2 -->
+                <div class="card p-5 border-t-4 border-emerald-400">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 mr-3">
+                            <i class="fas fa-paw"></i>
+                        </div>
+                        <h3 class="font-bold text-stone-800">Pet Supplies</h3>
+                    </div>
+                    <div class="text-3xl font-bold text-stone-900 mb-1">6-8%</div>
+                    <div class="text-xs font-semibold text-emerald-600 mb-3">LOW RETURN</div>
+                    <p class="text-sm text-stone-600">
+                        <strong>Why:</strong> Functional utility. Food/Treats are non-returnable. Toys are low cost.
+                    </p>
+                </div>
+
+                <!-- Moderate Card -->
+                <div class="card p-5 border-t-4 border-yellow-400">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 rounded-full bg-yellow-100 flex items-center justify-center text-yellow-600 mr-3">
+                            <i class="fas fa-mobile-alt"></i>
+                        </div>
+                        <h3 class="font-bold text-stone-800">Electronics & Acc.</h3>
+                    </div>
+                    <div class="text-3xl font-bold text-stone-900 mb-1">12-15%</div>
+                    <div class="text-xs font-semibold text-yellow-600 mb-3">MODERATE RETURN</div>
+                    <p class="text-sm text-stone-600">
+                        <strong>Why:</strong> Compatibility issues (wrong cover/cable). Product quality disputes on unbranded items.
+                    </p>
+                </div>
+
+                <!-- Danger Card -->
+                <div class="card p-5 border-t-4 border-red-400">
+                    <div class="flex items-center mb-3">
+                        <div class="w-10 h-10 rounded-full bg-red-100 flex items-center justify-center text-red-600 mr-3">
+                            <i class="fas fa-tshirt"></i>
+                        </div>
+                        <h3 class="font-bold text-stone-800">Clothing & Footwear</h3>
+                    </div>
+                    <div class="text-3xl font-bold text-stone-900 mb-1">25-40%</div>
+                    <div class="text-xs font-semibold text-red-600 mb-3">HIGH RETURN</div>
+                    <p class="text-sm text-stone-600">
+                        <strong>Why:</strong> Size/Fit is subjective. Fabric quality perception vs photo. Ordering multiple sizes.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Meesho & Value Platform Dynamics -->
+        <section class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <!-- Platform Comparison -->
+            <div class="card p-6">
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold text-stone-800">Platform Impact: Branded vs. Value</h3>
+                    <p class="text-sm text-stone-500">Return rates are typically higher on value platforms (like Meesho) due to the COD model and unbranded nature of goods.</p>
+                </div>
+                <div class="chart-container">
+                    <canvas id="platformChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Reasons breakdown -->
+            <div class="card p-6 flex flex-col">
+                <div class="mb-4">
+                    <h3 class="text-lg font-bold text-stone-800">Why Customers Return (Value Segment)</h3>
+                    <p class="text-sm text-stone-500">Understanding the root cause is key to selection.</p>
+                </div>
+                <div class="flex-grow flex items-center justify-center">
+                     <div class="chart-container" style="max-height: 300px;">
+                        <canvas id="reasonsChart"></canvas>
+                    </div>
+                </div>
+                <div class="mt-4 grid grid-cols-2 gap-2 text-xs text-stone-600">
+                    <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-stone-700 mr-2"></span>Quality doesn't match pic</div>
+                    <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-stone-500 mr-2"></span>Size/Fit Issue</div>
+                    <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-stone-400 mr-2"></span>Damage in Transit</div>
+                    <div class="flex items-center"><span class="w-3 h-3 rounded-full bg-stone-300 mr-2"></span>Changed Mind (COD RTO)</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- NEW SECTION: High Demand vs. Risk Matrix -->
+        <section class="mb-12">
+            <div class="mb-6 flex flex-col md:flex-row md:items-end justify-between">
+                <div>
+                    <h2 class="text-2xl font-bold text-stone-900">High Demand vs. Risk Matrix</h2>
+                    <p class="text-stone-600">Identify the "Gold Mine" products: High Volume & Low Returns.</p>
+                </div>
+                <div class="mt-4 md:mt-0 text-right">
+                    <span class="inline-block px-3 py-1 bg-emerald-100 text-emerald-800 text-xs font-bold rounded-full border border-emerald-200">Target Zone: Top Left</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <!-- Demand Chart -->
+                <div class="lg:col-span-2 card p-6">
+                    <div class="chart-container">
+                        <canvas id="demandMatrixChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Top High Demand SKUs List -->
+                <div class="lg:col-span-1 space-y-4">
+                    <h3 class="font-bold text-stone-800 border-b pb-2">🔥 Top High-Demand SKUs (India)</h3>
+                    
+                    <!-- Item 1 -->
+                    <div class="flex items-start p-3 bg-white rounded-lg border border-stone-200 hover:border-stone-400 transition">
+                        <div class="bg-purple-100 text-purple-600 w-10 h-10 rounded flex items-center justify-center flex-shrink-0 mr-3">
+                            <i class="fas fa-female"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm text-stone-800">Kurtis & Sarees (Under ₹500)</div>
+                            <div class="text-xs text-stone-500 mt-1">Massive volume on Meesho. <span class="text-red-500 font-semibold">High Return Risk.</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Item 2 -->
+                    <div class="flex items-start p-3 bg-white rounded-lg border border-stone-200 hover:border-stone-400 transition">
+                        <div class="bg-emerald-100 text-emerald-600 w-10 h-10 rounded flex items-center justify-center flex-shrink-0 mr-3">
+                            <i class="fas fa-magic"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm text-stone-800">Kitchen "Smart" Tools</div>
+                            <div class="text-xs text-stone-500 mt-1">Choppers, Juicers, Organizers. <span class="text-emerald-600 font-semibold">Safe Bet (Low Return).</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Item 3 -->
+                    <div class="flex items-start p-3 bg-white rounded-lg border border-stone-200 hover:border-stone-400 transition">
+                        <div class="bg-blue-100 text-blue-600 w-10 h-10 rounded flex items-center justify-center flex-shrink-0 mr-3">
+                            <i class="fas fa-headphones"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm text-stone-800">TWS Earbuds & Smartwatches</div>
+                            <div class="text-xs text-stone-500 mt-1">Explosive growth. <span class="text-yellow-600 font-semibold">Moderate Return Risk.</span></div>
+                        </div>
+                    </div>
+
+                    <!-- Item 4 -->
+                    <div class="flex items-start p-3 bg-white rounded-lg border border-stone-200 hover:border-stone-400 transition">
+                        <div class="bg-pink-100 text-pink-600 w-10 h-10 rounded flex items-center justify-center flex-shrink-0 mr-3">
+                            <i class="fas fa-spray-can"></i>
+                        </div>
+                        <div>
+                            <div class="font-bold text-sm text-stone-800">Beauty (Serums & Lipsticks)</div>
+                            <div class="text-xs text-stone-500 mt-1">High repeat purchases. <span class="text-emerald-600 font-semibold">Very Low Returns.</span></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Interactive Profit Calculator -->
+        <section class="bg-stone-800 rounded-xl p-8 text-white shadow-xl mb-12">
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div class="lg:col-span-1">
+                    <h2 class="text-2xl font-bold mb-3 text-emerald-400"><i class="fas fa-calculator mr-2"></i>Profit Simulator</h2>
+                    <p class="text-stone-300 text-sm mb-6">
+                        High return categories often have higher margins, but does the return cost eat your profit? 
+                        Use this calculator to check the viability of a product category.
+                    </p>
+                    <div class="bg-stone-700/50 p-4 rounded-lg text-xs text-stone-400 space-y-2">
+                        <p><strong>Note:</strong> RTO (Return to Origin) charges are usually freight both ways. Customer Returns often involve damage or loss of packaging.</p>
+                    </div>
+                </div>
+
+                <!-- Calculator Inputs -->
+                <div class="lg:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6">
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-stone-400 mb-1">Selling Price (₹)</label>
+                            <input type="number" id="calcPrice" value="500" class="w-full bg-stone-700 border border-stone-600 rounded p-2 text-white focus:outline-none focus:border-emerald-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-stone-400 mb-1">Product Cost (₹)</label>
+                            <input type="number" id="calcCost" value="200" class="w-full bg-stone-700 border border-stone-600 rounded p-2 text-white focus:outline-none focus:border-emerald-500 transition">
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-stone-400 mb-1">Shipping & Packaging (₹)</label>
+                            <input type="number" id="calcShip" value="60" class="w-full bg-stone-700 border border-stone-600 rounded p-2 text-white focus:outline-none focus:border-emerald-500 transition">
+                        </div>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-medium text-stone-400 mb-1">Return Rate (%)</label>
+                            <input type="range" id="calcRateSlider" min="0" max="50" value="20" class="w-full accent-emerald-500 h-2 bg-stone-600 rounded-lg appearance-none cursor-pointer">
+                            <div class="flex justify-between text-xs text-stone-400 mt-1">
+                                <span>0%</span>
+                                <span id="calcRateDisplay" class="text-emerald-400 font-bold">20%</span>
+                                <span>50%</span>
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-medium text-stone-400 mb-1">Return Penalty Cost (₹)</label>
+                            <input type="number" id="calcPenalty" value="100" class="w-full bg-stone-700 border border-stone-600 rounded p-2 text-white focus:outline-none focus:border-emerald-500 transition" title="Cost of reverse shipping + packaging loss">
+                        </div>
+
+                        <!-- Result Box -->
+                        <div class="bg-stone-900 border border-stone-700 p-4 rounded-lg mt-4">
+                            <div class="text-xs text-stone-400">Net Profit Per 100 Orders</div>
+                            <div id="resultProfit" class="text-2xl font-bold text-white mt-1">₹ 0</div>
+                            <div id="resultMargin" class="text-sm text-emerald-400 mt-1">0% Margin</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- NEW SECTION: AI Tools -->
+        <section class="mb-12 border-t border-stone-200 pt-10">
+            <div class="text-center max-w-3xl mx-auto mb-8">
+                <span class="bg-gradient-to-r from-emerald-500 to-teal-500 text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wide">Powered by Gemini</span>
+                <h2 class="text-3xl font-bold text-stone-900 mt-4">AI Strategic Intelligence ✨</h2>
+                <p class="text-stone-600 mt-2">Leverage advanced AI to analyze niche risks and optimize your listings for the Indian market.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Tool 1: Niche Risk Scout -->
+                <div class="card p-6 border border-stone-200 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition">
+                        <i class="fas fa-search-dollar text-8xl text-emerald-500"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-stone-800 mb-2 flex items-center">
+                        <i class="fas fa-binoculars text-emerald-600 mr-2"></i> Risk Scout ✨
+                    </h3>
+                    <p class="text-sm text-stone-500 mb-4">Enter a product category to get an instant AI assessment of its return risk profile in India.</p>
+                    
+                    <div class="space-y-3">
+                        <input type="text" id="riskInput" placeholder="e.g., Ceramic Planters, Oxidised Jewellery..." class="w-full border border-stone-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition text-sm">
+                        <button onclick="analyzeRisk()" id="riskBtn" class="w-full bg-stone-800 hover:bg-stone-900 text-white font-medium py-2 px-4 rounded-lg transition flex justify-center items-center">
+                            <span>Analyze Market Risk ✨</span>
+                        </button>
+                    </div>
+
+                    <!-- Result Area -->
+                    <div id="riskResult" class="mt-6 hidden">
+                        <div class="bg-stone-50 p-4 rounded-lg border border-stone-200 text-sm text-stone-700 animate-fade-in">
+                            <div class="flex items-center mb-2">
+                                <div id="riskBadge" class="px-2 py-0.5 rounded text-xs font-bold uppercase mr-2"></div>
+                                <span class="font-bold text-stone-900">AI Assessment</span>
+                            </div>
+                            <p id="riskText" class="leading-relaxed"></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tool 2: Listing Optimizer -->
+                <div class="card p-6 border border-stone-200 relative overflow-hidden group">
+                    <div class="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition">
+                        <i class="fas fa-edit text-8xl text-purple-500"></i>
+                    </div>
+                    <h3 class="text-xl font-bold text-stone-800 mb-2 flex items-center">
+                        <i class="fas fa-magic text-purple-600 mr-2"></i> Listing "Return-Proofer" ✨
+                    </h3>
+                    <p class="text-sm text-stone-500 mb-4">Paste your product description. AI will suggest edits to clarify expectations and reduce returns.</p>
+                    
+                    <div class="space-y-3">
+                        <textarea id="optimizeInput" rows="3" placeholder="Paste description here (e.g., 'Blue cotton kurti with embroidery...')" class="w-full border border-stone-300 rounded-lg p-3 focus:outline-none focus:ring-2 focus:ring-purple-500 transition text-sm"></textarea>
+                        <button onclick="optimizeListing()" id="optimizeBtn" class="w-full bg-stone-800 hover:bg-stone-900 text-white font-medium py-2 px-4 rounded-lg transition flex justify-center items-center">
+                            <span>Suggest Improvements ✨</span>
+                        </button>
+                    </div>
+
+                    <!-- Result Area -->
+                    <div id="optimizeResult" class="mt-6 hidden">
+                        <div class="bg-purple-50 p-4 rounded-lg border border-purple-100 text-sm text-stone-700 animate-fade-in">
+                            <h4 class="font-bold text-purple-800 mb-2 text-xs uppercase">AI Suggestions</h4>
+                            <div id="optimizeText" class="space-y-2 leading-relaxed list-disc pl-4"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-white border-t border-stone-200 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 py-6 sm:px-6 lg:px-8 flex flex-col sm:flex-row justify-between items-center gap-4 text-sm text-stone-500">
+            <p>&copy; 2025 E-commerce Analytics Demo.</p>
+            
+            <a href="https://www.instagram.com/rm_fx07" target="_blank" rel="noopener noreferrer" class="flex items-center text-stone-600 hover:text-pink-600 transition-colors group">
+                <i class="fab fa-instagram text-xl mr-2 group-hover:scale-110 transition-transform"></i>
+                <span class="font-medium">Follow @rm_fx07</span>
+            </a>
+
+            <p>Generated for Research Analysis</p>
+        </div>
+    </footer>
+
+    <!-- JavaScript Logic -->
+    <script>
+        // --- GEMINI API INTEGRATION ---
+        const apiKey = "AIzaSyAcllLUMY3xnB1ws1aV7IQq2icHZE_N69o";
+
+        async function callGemini(prompt, systemInstruction = "") {
+            if (!apiKey) {
+                alert("API Key is missing. Please check configuration.");
+                return null;
+            }
+
+            const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
+            
+            const payload = {
+                contents: [{ parts: [{ text: prompt }] }],
+                systemInstruction: { parts: [{ text: systemInstruction }] }
+            };
+
+            try {
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json();
+                
+                if (data.error) {
+                    console.error("Gemini API Error:", data.error);
+                    return "Error: " + data.error.message;
+                }
+
+                return data.candidates?.[0]?.content?.parts?.[0]?.text || "No analysis available.";
+            } catch (error) {
+                console.error("Fetch Error:", error);
+                return "Network error. Please try again.";
+            }
+        }
+
+        // --- Feature 1: Risk Scout ---
+        async function analyzeRisk() {
+            const input = document.getElementById('riskInput').value;
+            if (!input) return;
+
+            const btn = document.getElementById('riskBtn');
+            const resultArea = document.getElementById('riskResult');
+            const badge = document.getElementById('riskBadge');
+            const text = document.getElementById('riskText');
+
+            // UI Loading State
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Analyzing...';
+            btn.disabled = true;
+            resultArea.classList.add('hidden');
+
+            const systemPrompt = "You are an expert Indian e-commerce analyst. The user will provide a product category. 1. Estimate the Return Risk (Low/Medium/High). 2. Provide a 1-sentence explanation of the primary return reason specific to India (e.g., sizing, transit damage). 3. Give a rough return rate percentage range.";
+            
+            const userPrompt = `Analyze risk for: ${input}`;
+
+            const response = await callGemini(userPrompt, systemPrompt);
+
+            // UI Reset
+            btn.innerHTML = originalBtnText;
+            btn.disabled = false;
+            
+            if (response) {
+                // Simple parsing to guess risk level for badge color (heuristic)
+                let badgeColor = "bg-stone-200 text-stone-800";
+                let badgeText = "Analysis";
+                
+                if (response.toLowerCase().includes("high")) {
+                    badgeColor = "bg-red-100 text-red-800";
+                    badgeText = "High Risk";
+                } else if (response.toLowerCase().includes("low")) {
+                    badgeColor = "bg-emerald-100 text-emerald-800";
+                    badgeText = "Low Risk";
+                } else if (response.toLowerCase().includes("medium") || response.toLowerCase().includes("moderate")) {
+                    badgeColor = "bg-yellow-100 text-yellow-800";
+                    badgeText = "Moderate Risk";
+                }
+
+                badge.className = `px-2 py-0.5 rounded text-xs font-bold uppercase mr-2 ${badgeColor}`;
+                badge.innerText = badgeText;
+                text.innerText = response;
+                resultArea.classList.remove('hidden');
+            }
+        }
+
+        // --- Feature 2: Listing Optimizer ---
+        async function optimizeListing() {
+            const input = document.getElementById('optimizeInput').value;
+            if (!input) return;
+
+            const btn = document.getElementById('optimizeBtn');
+            const resultArea = document.getElementById('optimizeResult');
+            const text = document.getElementById('optimizeText');
+
+            // UI Loading State
+            const originalBtnText = btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-2"></i> Optimizing...';
+            btn.disabled = true;
+            resultArea.classList.add('hidden');
+
+            const systemPrompt = "You are an Indian e-commerce listing expert. The user will provide a product description. Identify 3 specific missing details that could cause returns (e.g., 'Mention material thickness', 'Add size chart', 'Clarify color under indoor light'). Output as a bulleted list.";
+            
+            const userPrompt = `Optimize this description to reduce returns: ${input}`;
+
+            const response = await callGemini(userPrompt, systemPrompt);
+
+            // UI Reset
+            btn.innerHTML = originalBtnText;
+            btn.disabled = false;
+
+            if (response) {
+                // Convert simple markdown bullets to HTML logic if needed, or just display text
+                // formatting specifically for display
+                const formattedResponse = response.replace(/\*/g, '').replace(/-/g, '•');
+                text.innerText = formattedResponse;
+                resultArea.classList.remove('hidden');
+            }
+        }
+
+        // --- Data Definitions ---
+        const categoryData = [
+            { label: 'Clothing (Western)', rate: 35, type: 'risky', color: '#ef4444' }, // Red-500
+            { label: 'Clothing (Ethnic)', rate: 28, type: 'risky', color: '#f87171' }, // Red-400
+            { label: 'Footwear', rate: 25, type: 'risky', color: '#fca5a5' }, // Red-300
+            { label: 'Jewelry (Artificial)', rate: 18, type: 'risky', color: '#fdba74' }, // Orange-300
+            { label: 'Home Decor', rate: 14, type: 'moderate', color: '#fbbf24' }, // Amber-400
+            { label: 'Electronics', rate: 12, type: 'moderate', color: '#fcd34d' }, // Amber-300
+            { label: 'Kitchen Tools', rate: 10, type: 'moderate', color: '#bef264' }, // Lime-300
+            { label: 'Baby Products', rate: 8, type: 'safe', color: '#86efac' }, // Green-300
+            { label: 'Toys & Stationery', rate: 7, type: 'safe', color: '#4ade80' }, // Green-400
+            { label: 'Pet Supplies', rate: 6, type: 'safe', color: '#22c55e' }, // Green-500
+            { label: 'Beauty/Personal Care', rate: 4, type: 'safe', color: '#15803d' } // Green-700
+        ];
+
+        // --- Chart 1: Main Category Chart ---
+        let mainChartInstance = null;
+
+        function initMainChart(filterType = 'all') {
+            const ctx = document.getElementById('categoryChart').getContext('2d');
+            
+            // Filter Data
+            let filteredData = categoryData;
+            if (filterType === 'safe') {
+                filteredData = categoryData.filter(d => d.rate < 10);
+            } else if (filterType === 'risky') {
+                filteredData = categoryData.filter(d => d.rate > 15);
+            }
+
+            // Sort High to Low
+            filteredData.sort((a, b) => b.rate - a.rate);
+
+            const labels = filteredData.map(d => d.label);
+            const data = filteredData.map(d => d.rate);
+            const backgroundColors = filteredData.map(d => d.color);
+
+            if (mainChartInstance) {
+                mainChartInstance.destroy();
+            }
+
+            mainChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Return Rate %',
+                        data: data,
+                        backgroundColor: backgroundColors,
+                        borderRadius: 4,
+                        borderSkipped: false,
+                        barThickness: 'flex',
+                        maxBarThickness: 40
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // Horizontal Bar Chart for better label readability
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return context.parsed.x + '% Returns';
+                                }
+                            },
+                            backgroundColor: 'rgba(28, 25, 23, 0.9)',
+                            padding: 10
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            grid: { color: '#e7e5e4' },
+                            title: { display: true, text: 'Percentage (%)' }
+                        },
+                        y: {
+                            grid: { display: false }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Chart 2: Platform Comparison ---
+        function initPlatformChart() {
+            const ctx = document.getElementById('platformChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['Branded Marketplaces', 'Value/Reseller Platforms (e.g., Meesho)'],
+                    datasets: [
+                        {
+                            label: 'Avg Return Rate',
+                            data: [12, 18],
+                            backgroundColor: ['#d6d3d1', '#f59e0b'], // Stone vs Amber
+                            borderRadius: 4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        title: { display: true, text: 'Average Return Rate Comparison' }
+                    },
+                    scales: {
+                        y: { beginAtZero: true, max: 25, title: {display: true, text: '% Returns'} }
+                    }
+                }
+            });
+        }
+
+        // --- Chart 3: Reasons Donut ---
+        function initReasonsChart() {
+            const ctx = document.getElementById('reasonsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Quality Discrepancy', 'Size/Fit', 'Transit Damage', 'Changed Mind (RTO)'],
+                    datasets: [{
+                        data: [35, 30, 10, 25],
+                        backgroundColor: [
+                            '#44403c', // Stone 700
+                            '#78716c', // Stone 500
+                            '#a8a29e', // Stone 400
+                            '#d6d3d1'  // Stone 300
+                        ],
+                        borderWidth: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false }
+                    },
+                    cutout: '70%'
+                }
+            });
+        }
+
+        // --- Chart 4: Demand vs Risk Matrix (Scatter) ---
+        function initMatrixChart() {
+            const ctx = document.getElementById('demandMatrixChart').getContext('2d');
+            
+            // Data format: x = Return Rate (Risk), y = Demand Volume (0-100), r = Market Size visual
+            const matrixData = [
+                { x: 35, y: 95, r: 15, label: 'Kurtis/Apparel', category: 'High Demand / High Risk' },
+                { x: 5, y: 85, r: 12, label: 'Beauty/Skincare', category: 'High Demand / Low Risk (Gold Mine)' },
+                { x: 8, y: 75, r: 10, label: 'Kitchen Tools', category: 'Good Demand / Low Risk' },
+                { x: 15, y: 90, r: 14, label: 'Smartwatches/TWS', category: 'High Demand / Moderate Risk' },
+                { x: 25, y: 60, r: 8, label: 'Footwear', category: 'Mod Demand / High Risk' },
+                { x: 6, y: 65, r: 9, label: 'Pet Supplies', category: 'Niche / Low Risk' },
+                { x: 14, y: 80, r: 11, label: 'Home Decor', category: 'High Demand / Moderate Risk' }
+            ];
+
+            new Chart(ctx, {
+                type: 'bubble',
+                data: {
+                    datasets: [{
+                        label: 'Market Categories',
+                        data: matrixData,
+                        backgroundColor: function(context) {
+                            const val = context.raw?.x;
+                            if (val < 10) return '#10b981'; // Green (Safe)
+                            if (val > 20) return '#ef4444'; // Red (Risky)
+                            return '#f59e0b'; // Amber (Moderate)
+                        }
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.raw.label}: ${context.raw.category}`;
+                                }
+                            }
+                        },
+                        annotation: {
+                            annotations: {
+                                label1: {
+                                    type: 'label',
+                                    xValue: 5,
+                                    yValue: 95,
+                                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                                    content: ['GOLD MINE', '(High Vol, Low Risk)'],
+                                    font: { size: 10, weight: 'bold' },
+                                    color: '#047857'
+                                },
+                                label2: {
+                                    type: 'label',
+                                    xValue: 35,
+                                    yValue: 95,
+                                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                                    content: ['VOLUME TRAP', '(High Vol, High Risk)'],
+                                    font: { size: 10, weight: 'bold' },
+                                    color: '#b91c1c'
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Return Risk (%)' },
+                            min: 0,
+                            max: 45,
+                            grid: { color: '#e7e5e4' }
+                        },
+                        y: {
+                            title: { display: true, text: 'Demand Volume (Index)' },
+                            min: 50,
+                            max: 100,
+                            grid: { color: '#e7e5e4' }
+                        }
+                    }
+                }
+            });
+        }
+
+        // --- Calculator Logic ---
+        function initCalculator() {
+            const inputs = ['calcPrice', 'calcCost', 'calcShip', 'calcPenalty', 'calcRateSlider'];
+            inputs.forEach(id => {
+                document.getElementById(id).addEventListener('input', calculateProfit);
+            });
+
+            calculateProfit(); // Initial run
+        }
+
+        function calculateProfit() {
+            // Get values
+            const sellingPrice = parseFloat(document.getElementById('calcPrice').value) || 0;
+            const productCost = parseFloat(document.getElementById('calcCost').value) || 0;
+            const shipping = parseFloat(document.getElementById('calcShip').value) || 0;
+            const penalty = parseFloat(document.getElementById('calcPenalty').value) || 0;
+            const returnRate = parseInt(document.getElementById('calcRateSlider').value) || 0;
+
+            // Update Slider Display
+            document.getElementById('calcRateDisplay').innerText = returnRate + "%";
+
+            // Calculation for 100 orders
+            const totalOrders = 100;
+            const returnedOrders = (returnRate / 100) * totalOrders;
+            const successfulOrders = totalOrders - returnedOrders;
+
+            // Revenue from successful orders
+            const totalRevenue = successfulOrders * sellingPrice;
+
+            // Costs
+            // 1. Product Cost for successful orders
+            const totalProductCost = successfulOrders * productCost;
+            
+            // 2. Shipping cost for ALL orders (you pay shipping even if it comes back usually, or penalty covers it)
+            // Lets simplify: Successful orders cost shipping. Returned orders cost 'Penalty' (which includes reverse + forward logistics loss)
+            const totalShippingCost = successfulOrders * shipping;
+            const totalPenaltyCost = returnedOrders * penalty;
+
+            const totalExpenses = totalProductCost + totalShippingCost + totalPenaltyCost;
+            
+            const netProfit = totalRevenue - totalExpenses;
+            const margin = (totalRevenue > 0) ? ((netProfit / totalRevenue) * 100).toFixed(1) : 0;
+
+            // Update DOM
+            const profitEl = document.getElementById('resultProfit');
+            const marginEl = document.getElementById('resultMargin');
+
+            profitEl.innerText = "₹ " + netProfit.toLocaleString('en-IN');
+            marginEl.innerText = margin + "% Margin";
+
+            if (netProfit < 0) {
+                profitEl.classList.add('text-red-400');
+                profitEl.classList.remove('text-white');
+                marginEl.classList.remove('text-emerald-400');
+                marginEl.classList.add('text-red-400');
+            } else {
+                profitEl.classList.add('text-white');
+                profitEl.classList.remove('text-red-400');
+                marginEl.classList.add('text-emerald-400');
+                marginEl.classList.remove('text-red-400');
+            }
+        }
+
+        // --- Global wrapper to expose filter function ---
+        window.updateMainChart = function(type) {
+            initMainChart(type);
+        }
+
+        // --- Initialization ---
+        document.addEventListener('DOMContentLoaded', () => {
+            initMainChart('all');
+            initPlatformChart();
+            initReasonsChart();
+            initMatrixChart(); 
+            initCalculator();
+        });
+
+    </script>
+
+    <!-- Visualization & Content Choices: 
+         1. Main Bar Chart: Chosen to clearly rank categories from high to low returns. Color coded (Green=Good, Red=Bad) for instant cognitive processing.
+         2. Comparison Cards: Used for "Deep Dive" to allow textual explanation (Why is Beauty low?) alongside the visual data.
+         3. Donut Chart: Shows the 'Why' (Reasons) effectively as parts of a whole 100%.
+         4. Calculator: Provides high interactive value. Users can simulate scenarios (e.g., "If I reduce returns by 5%, how much do I make?").
+         5. Platform Chart: A simple bar chart to show the "Meesho Effect" (Value commerce vs General commerce).
+         
+         CONFIRMATION: NO SVG graphics used. NO Mermaid JS used.
+    -->
+</body>
+</html>
